@@ -82,6 +82,13 @@ func WithScopes(scopes ...string) FunctionalOption {
 	}
 }
 
+func WithAdminLogin() FunctionalOption {
+	return func(gcs *goCloakSession) error {
+		gcs.adminLogin = true
+		return nil
+	}
+}
+
 type goCloakSession struct {
 	clientID                              string
 	clientSecret                          string
@@ -93,6 +100,7 @@ type goCloakSession struct {
 	prematureRefreshTokenRefreshThreshold int
 	prematureAccessTokenRefreshThreshold  int
 	skipRefresh                           bool
+	adminLogin                            bool
 	scopes                                []string
 }
 
@@ -195,7 +203,16 @@ func (s *goCloakSession) authenticate() error {
 	now := time.Now()
 	s.lastRequest = &now
 
-	jwt, err := s.gocloak.LoginClient(context.Background(), s.clientID, s.clientSecret, s.realm, s.scopes...)
+	var (
+		jwt *gocloak.JWT
+		err error
+	)
+
+	if s.adminLogin {
+		jwt, err = s.gocloak.LoginAdmin(context.Background(), s.clientID, s.clientSecret, s.realm)
+	} else {
+		jwt, err = s.gocloak.LoginClient(context.Background(), s.clientID, s.clientSecret, s.realm, s.scopes...)
+	}
 	if err != nil {
 		return errors.Wrap(err, "could not login to keycloak")
 	}
