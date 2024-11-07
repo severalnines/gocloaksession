@@ -1,4 +1,4 @@
-module github.com/Clarilab/gocloaksession
+module github.com/severalnines/gocloaksession
 
 go 1.21
 
